@@ -4,7 +4,7 @@
 #include "vec3.h"
 
 class ray {
-    public:
+public:
     ray() {}
 
     ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction) {}
@@ -16,7 +16,7 @@ class ray {
         return orig + t*dir;
     }
 
-    private:
+private:
     point3 orig;
     vec3 dir;
 };
