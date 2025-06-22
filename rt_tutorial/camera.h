@@ -197,7 +197,9 @@ private:
 
     vec3 sample_square() const
     {
-        return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+        // Anti aliasing desativado
+        // return vec3(random_double() - 0.5, random_double() - 0.5, 0);
+        return vec3(- 0.5, - 0.5, 0);
     }
 
     color ray_color(const ray &r, int depth, const hittable &world) const
