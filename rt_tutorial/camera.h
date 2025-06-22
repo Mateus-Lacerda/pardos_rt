@@ -6,37 +6,44 @@
 #include "material.h"
 #include "vec3.h"
 #include <fstream>
+#include <omp.h>
 
-class camera {
+class camera
+{
 public:
-    double aspect_ratio      = 1.0;
-    int    image_width       = 100;
-    int    samples_per_pixel = 10;
-    int    max_depth         = 10;
+    double aspect_ratio = 1.0;
+    int image_width = 100;
+    int samples_per_pixel = 10;
+    int max_depth = 10;
 
-    void render(const hittable& world, const std::string& filename) {
+    void render(const hittable &world, const std::string &filename)
+    {
         initialize();
 
         std::ofstream out(filename, std::ios::out | std::ios::trunc);
-        if (!out) {
+        if (!out)
+        {
             std::cerr << "Failed to open file: " << filename << std::endl;
             return;
         }
-        out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        out << "P3\n"
+            << image_width << ' ' << image_height << "\n255\n";
 
-        for (int j = 0; j < image_height; j++) {
+        for (int j = 0; j < image_height; j++)
+        {
             std::clog << "\nScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-            for (int i = 0; i < image_width; i++) {
+            for (int i = 0; i < image_width; i++)
+            {
                 // Initial white pixel
-                color pixel_color(0,0,0);
-                for (int sample = 0; sample < samples_per_pixel; sample++) {
+                color pixel_color(0, 0, 0);
+                for (int sample = 0; sample < samples_per_pixel; sample++)
+                {
                     // Ray at position (i, j)
                     // Could this be before the loop?
                     // No because get_ray introduces randomness for the antialiasing
                     ray r = get_ray(i, j);
                     // Increment the pixel_color
                     pixel_color += ray_color(r, max_depth, world);
-
                 }
                 // auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
                 // auto ray_direction = pixel_center - center; // The - op does nothing
@@ -56,16 +63,27 @@ public:
         std::clog << "\rDone                           \n";
         out.close();
     }
-
-private:
-    int    image_height;
-    double pixel_samples_scale;
-    point3 center;
-    point3 pixel00_loc;
-    vec3   pixel_delta_u;
-    vec3   pixel_delta_v;
-
-    void initialize() {
+    color get_pixel_color(int i, int j, const hittable &world)
+    {
+        color pixel_color(0, 0, 0);
+#pragma omp parallel
+        {
+            color local_color(0, 0, 0);
+#pragma omp for nowait
+            for (int sample = 0; sample < samples_per_pixel; sample++)
+            {
+                ray r = get_ray(i, j);
+                local_color += ray_color(r, max_depth, world);
+            }
+#pragma omp critical
+            {
+                pixel_color += local_color;
+            }
+        }
+        return pixel_samples_scale * pixel_color;
+    }
+    void initialize()
+    {
         image_height = int(image_width / aspect_ratio);
         image_height = (image_height < 1) ? 1 : image_height;
 
@@ -76,38 +94,45 @@ private:
 
         auto focal_lenght = 1.0;
         auto viewport_height = 2.0;
-        auto viewport_width = viewport_height * (double(image_width)/image_height);
+        auto viewport_width = viewport_height * (double(image_width) / image_height);
 
         // Control vectors for the axes
 
-        auto viewport_u = vec3(viewport_width, 0, 0); // x axis
+        auto viewport_u = vec3(viewport_width, 0, 0);   // x axis
         auto viewport_v = vec3(0, -viewport_height, 0); // y axis
-        
+
         // Delta vectors for the axes
 
-        pixel_delta_u = viewport_u / image_width; // x axis
+        pixel_delta_u = viewport_u / image_width;  // x axis
         pixel_delta_v = viewport_v / image_height; // y axis
 
         // Location of P(0,0)
 
-        auto viewport_upper_left = center
-            - vec3(0, 0, focal_lenght) // Walk from camera to the screen
-            - viewport_u/2 // Walk from center to left bound
-            - viewport_v/2; // Walk back from the center to upper bound
-        pixel00_loc = viewport_upper_left 
-            // Walk from the 0th position to the pixel's center
-            + 0.5 * (pixel_delta_u + pixel_delta_v);
-
+        auto viewport_upper_left = center - vec3(0, 0, focal_lenght) // Walk from camera to the screen
+                                   - viewport_u / 2                  // Walk from center to left bound
+                                   - viewport_v / 2;                 // Walk back from the center to upper bound
+        pixel00_loc = viewport_upper_left
+                      // Walk from the 0th position to the pixel's center
+                      + 0.5 * (pixel_delta_u + pixel_delta_v);
     }
 
-    ray get_ray(int i, int j) const {
+private:
+    int image_height;
+    double pixel_samples_scale;
+    point3 center;
+    point3 pixel00_loc;
+    vec3 pixel_delta_u;
+    vec3 pixel_delta_v;
+
+    ray get_ray(int i, int j) const
+    {
         // Offset is a randomized vec3, at z = 0
         auto offset = sample_square();
         auto pixel_sample = pixel00_loc // Get the 0th pixel`s pos
-                            // Walk offset.x pixels
-                          + ((i + offset.x()) * pixel_delta_u)
+                                        // Walk offset.x pixels
+                            + ((i + offset.x()) * pixel_delta_u)
                             // Walk offset.y pixels
-                          + ((j + offset.y()) * pixel_delta_v);
+                            + ((j + offset.y()) * pixel_delta_v);
         // Ray origin at the center
         auto ray_origin = center;
         // Vector op to get the ray direction to the sample
@@ -116,18 +141,21 @@ private:
         return ray(ray_origin, ray_direction);
     }
 
-    vec3 sample_square() const {
+    vec3 sample_square() const
+    {
         return vec3(random_double() - 0.5, random_double() - 0.5, 0);
     }
 
-    color ray_color(const ray& r, int depth, const hittable& world) const {
+    color ray_color(const ray &r, int depth, const hittable &world) const
+    {
         if (depth <= 0)
             // If light can't hit anything, its just light
-            return color(0,0,0);
+            return color(0, 0, 0);
 
         hit_record rec;
 
-        if (world.hit(r, interval(0.001, infinity), rec)) {
+        if (world.hit(r, interval(0.001, infinity), rec))
+        {
             // return 0.5 * (rec.normal + color(1,1,1));
             // Random ray diffusing
             // vec3 direction = random_on_hemisphere(rec.normal);
@@ -138,8 +166,8 @@ private:
             ray scattered;
             color attenuation;
             if (rec.mat->scatter(r, rec, attenuation, scattered))
-                return attenuation * ray_color(scattered, depth-1, world);
-            return color(0,0,0);
+                return attenuation * ray_color(scattered, depth - 1, world);
+            return color(0, 0, 0);
         }
 
         // Lerp
@@ -147,12 +175,10 @@ private:
         // First, create a unit vetor in the ray direction
         vec3 unit_direction = unit_vector(r.direction());
         // Based on the y coordinaate
-        auto a = 0.5*(unit_direction.y() + 1.0);
+        auto a = 0.5 * (unit_direction.y() + 1.0);
         // std::clog << "\na = " << a << ' ' << std::flush;
-        return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+        return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
     }
-    
 };
-
 
 #endif // !CAMERA_H
