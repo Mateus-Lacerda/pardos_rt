@@ -21,7 +21,7 @@ SDLRenderer::~SDLRenderer()
     SDL_Quit();
 }
 
-void SDLRenderer::render(camera &cam, hittable_list &world)
+void SDLRenderer::render(camera &cam, hittable_map &world)
 {
     cam.initialize(); // Garante que a câmera está pronta antes do paralelismo
 #pragma omp parallel for collapse(2) schedule(static)

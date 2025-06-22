@@ -6,6 +6,7 @@
 #include "sdl_renderer.h"
 #include "plane.h"
 #include "box.h"
+#include <SDL2/SDL_timer.h>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -15,7 +16,7 @@ int main()
     while (true)
     {
         std::srand(std::time(nullptr));
-        hittable_list world;
+        hittable_map world;
         auto material_ground = make_shared<lambertian>(color(0.05, 0.05, 0.1));
         world.add(make_shared<plane>(point3(0, -0.5, 0), vec3(0, 1, 0), material_ground));
         auto player = make_shared<sphere>(point3(0, -0.45, -1), 0.1, make_shared<metal>(color(0.2, 0.8, 1.0)));
@@ -38,6 +39,7 @@ int main()
         int frame = 0;
         while (renderer.process_events())
         {
+            Uint32 frameStart = SDL_GetTicks();
             renderer.render(cam, world);
             renderer.present();
             if (game.game_over)
@@ -51,6 +53,10 @@ int main()
                     else if (*move == SDLK_r)
                         break;
                 }
+                Uint32 frameTime = SDL_GetTicks() - frameStart;
+                if (frameTime < 33) {
+                    SDL_Delay(33 - frameTime);
+                }
                 continue;
             }
             auto move = renderer.poll_key();
@@ -61,6 +67,10 @@ int main()
             }
             game.update(move, frame);
             frame++;
+            Uint32 frameTime = SDL_GetTicks() - frameStart;
+            if (frameTime < 33) {
+                SDL_Delay(33 - frameTime);
+            }
         }
     }
     return 0;

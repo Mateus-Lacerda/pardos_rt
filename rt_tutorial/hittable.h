@@ -2,6 +2,7 @@
 #define HITTABLE_H
 
 #include "rtweekend.h"
+#include <string>
 
 class material;
 
@@ -21,11 +22,20 @@ public:
     }
 };
 
+
 class hittable {
 public:
+    hittable() : _id(std::to_string(_next_id++)) {}
+
     virtual ~hittable() = default;
 
     virtual bool hit(const ray& r, interval ray, hit_record& rec) const = 0;
+
+    std::string id() const { return _id; }
+
+private:
+    std::string _id;
+    static inline size_t _next_id = 0;
 };
 
 #endif // !HITTABLE_H

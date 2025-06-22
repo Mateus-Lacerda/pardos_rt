@@ -12,7 +12,7 @@
 int main()
 {
     // Cria o mundo e player igual ao main.cc
-    hittable_list world;
+    hittable_map world;
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_wall = make_shared<lambertian>(color(0.7, 0.4, 0.2));
     auto material_roof = make_shared<lambertian>(color(0.5, 0.1, 0.1));

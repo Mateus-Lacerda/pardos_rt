@@ -10,12 +10,10 @@
 #include <cstdlib>
 #include <ctime>
 
-int main()
-{
-    while (true)
-    {
+int main() {
+    while (true) {
         std::srand(std::time(nullptr));
-        hittable_list world;
+        hittable_map world;
         auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
         world.add(make_shared<plane>(point3(0, -0.5, 0), vec3(0, 1, 0), material_ground));
         auto player = make_shared<sphere>(point3(0, -0.45, -1), 0.08, make_shared<metal>(color(0.8, 0.2, 0.2)));
@@ -36,28 +34,21 @@ int main()
 
         DodgeGame game(&world, player);
         int frame = 0;
-        while (renderer.process_events())
-        {
+        while (renderer.process_events()) {
             renderer.render(cam, world);
             renderer.present();
-            if (game.game_over)
-            {
+            if (game.game_over) {
                 std::cout << "Game Over! Press x to exit or r to restart.\n";
                 auto move = renderer.poll_key();
-                if (move)
-                {
-                    if (*move == SDLK_x)
-                        return 0;
-                    else if (*move == SDLK_r)
-                        break;
+                if (move) {
+                    if (*move == SDLK_x) return 0;
+                    else if (*move == SDLK_r) break;
                 }
                 continue;
             }
             auto move = renderer.poll_key();
-            if (move)
-            {
-                if (*move == SDLK_x)
-                    return 0;
+            if (move) {
+                if (*move == SDLK_x) return 0;
             }
             game.update(move, frame);
             frame++;

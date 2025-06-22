@@ -4,20 +4,25 @@
 #include "hittable.h"
 #include "rtweekend.h"
 
-#include <vector>
+#include <unordered_map>
+#include <string>
 
-class hittable_list : public hittable {
+class hittable_map : public hittable {
 public:
-    std::vector<shared_ptr<hittable>> objects;
+    std::unordered_map<std::string, shared_ptr<hittable>> objects;
 
-
-    hittable_list() {}
-    hittable_list(shared_ptr<hittable> object) { add(object); }
+    hittable_map() {}
+    hittable_map(shared_ptr<hittable> object) { add(object); }
 
     void clear() { objects.clear(); }
 
     void add(shared_ptr<hittable> object) {
-        objects.push_back(object);
+        // Assume que hittable tem um método id() que retorna std::string
+        objects[object->id()] = object;
+    }
+
+    void remove(const std::string& id) {
+        objects.erase(id);
     }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
@@ -25,7 +30,7 @@ public:
         bool hit_anything = false;
         auto closest_so_far = ray_t.max;
 
-        for (const auto& object : objects) {
+        for (const auto& [name, object] : objects) {
             if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;

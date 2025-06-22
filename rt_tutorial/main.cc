@@ -8,28 +8,11 @@
 #include "plane.h"
 #include "box.h"
 #include "cylinder.h"
-
-#include <iostream>
-#include <termios.h>
-#include <unistd.h>
-
-char get_char()
-{
-    char val;
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    read(STDIN_FILENO, &val, 1);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    std::cout << val << std::endl;
-    return val;
-}
+#include "movable.h"
 
 int main()
 {
-    hittable_list world;
+    hittable_map world;
 
     // Materiais
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
@@ -82,26 +65,28 @@ int main()
     {
         renderer.render(cam, world);
         renderer.present();
-        char move = get_char();
-        if (move == 'x')
-        {
-            exit(0);
-        }
-        else if (move == 'c')
-        {
-            moving = 'c';
-        }
-        else if (move == 'p')
-        {
-            moving = 's';
-        }
-        else if (moving == 's')
-        {
-            player->move(move);
-        }
-        else if (moving == 'c')
-        {
-            cam.move(move);
+        auto move = get_char(0.16);
+        if (move) {
+            if (*move == 'x')
+            {
+                exit(0);
+            }
+            else if (*move == 'c')
+            {
+                moving = 'c';
+            }
+            else if (*move == 'p')
+            {
+                moving = 's';
+            }
+            else if (moving == 's')
+            {
+                player->move(*move);
+            }
+            else if (moving == 'c')
+            {
+                cam.move(*move);
+            }
         }
     }
     return 0;

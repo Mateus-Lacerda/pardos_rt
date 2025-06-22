@@ -15,14 +15,14 @@ public:
     shared_ptr<sphere> player;
     std::vector<shared_ptr<box>> enemies;
     std::vector<shared_ptr<sphere>> shots;
-    hittable_list *world;
+    hittable_map *world;
     double enemy_speed = 0.025;
     double shot_speed = 0.07;
     double spawn_interval = 30; // frames
     bool game_over = false;
     int score = 0;
 
-    SpaceShooterGame(hittable_list *world, shared_ptr<sphere> player)
+    SpaceShooterGame(hittable_map *world, shared_ptr<sphere> player)
         : world(world), player(player) {}
 
     void update(std::optional<SDL_Keycode> input, int frame)
@@ -98,6 +98,12 @@ public:
         shots.erase(std::remove_if(shots.begin(), shots.end(), [&](auto &s)
                                    { return std::find(shots_to_remove.begin(), shots_to_remove.end(), s) != shots_to_remove.end(); }),
                     shots.end());
+        for (auto &e : enemies_to_remove) {
+            world->remove(e->id()); // Certifique-se de que 'id' existe em box
+        }
+        for (auto &s : shots_to_remove) {
+            world->remove(s->id()); // Certifique-se de que 'id' existe em box
+        }
         // Colisão player-inimigo
         for (auto &e : enemies)
         {

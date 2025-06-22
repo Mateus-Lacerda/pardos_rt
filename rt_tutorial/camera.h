@@ -82,25 +82,21 @@ public:
         std::clog << "\rDone                           \n";
         out.close();
     }
+
+    #pragma omp declare reduction(vec3_add : vec3 : omp_out += omp_in) initializer(omp_priv = vec3(0,0,0))
+
     color get_pixel_color(int i, int j, const hittable &world)
     {
         color pixel_color(0, 0, 0);
-#pragma omp parallel
+        #pragma omp parallel for reduction(vec3_add:pixel_color)
+        for (int sample = 0; sample < samples_per_pixel; sample++)
         {
-            color local_color(0, 0, 0);
-#pragma omp for nowait
-            for (int sample = 0; sample < samples_per_pixel; sample++)
-            {
-                ray r = get_ray(i, j);
-                local_color += ray_color(r, max_depth, world);
-            }
-#pragma omp critical
-            {
-                pixel_color += local_color;
-            }
+            ray r = get_ray(i, j);
+            pixel_color += ray_color(r, max_depth, world);
         }
         return pixel_samples_scale * pixel_color;
     }
+
     void initialize()
     {
         image_height = int(image_width / aspect_ratio);

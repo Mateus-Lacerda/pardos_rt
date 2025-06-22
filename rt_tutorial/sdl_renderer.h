@@ -12,7 +12,7 @@ class SDLRenderer
 public:
     SDLRenderer(int img_width, int img_height, int win_width, int win_height);
     ~SDLRenderer();
-    void render(camera &cam, hittable_list &world);
+    void render(camera &cam, hittable_map &world);
     void present();
     bool process_events();
     int width, height;               // image size

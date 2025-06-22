@@ -11,13 +11,13 @@ class PlatformerGame
 {
 public:
     shared_ptr<sphere> player;
-    hittable_list *world;
+    hittable_map *world;
     double velocity_y = 0.0;
     bool on_ground = false;
     double gravity = -0.03;
     double jump_strength = 0.15;
 
-    PlatformerGame(hittable_list *world, shared_ptr<sphere> player)
+    PlatformerGame(hittable_map *world, shared_ptr<sphere> player)
         : world(world), player(player) {}
 
     void update(std::optional<SDL_Keycode> input)
