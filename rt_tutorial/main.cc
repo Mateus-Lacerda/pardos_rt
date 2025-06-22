@@ -43,7 +43,7 @@ int main()
     camera cam;
 
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 100;
+    cam.image_width = 80;
     cam.samples_per_pixel = 40;
     cam.max_depth = 10;
 
@@ -54,6 +54,8 @@ int main()
 
     while (renderer.process_events())
     {
+        renderer.render(cam, world);
+        renderer.present();
         char move = get_char();
         if (move == 'q')
         {
@@ -63,9 +65,6 @@ int main()
         {
             movable_sphere->move(move);
         }
-
-        renderer.render(cam, world);
-        renderer.present();
     }
     return 0;
 }
