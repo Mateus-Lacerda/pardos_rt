@@ -48,7 +48,7 @@ int main()
     {
         renderer.render(cam, world);
         renderer.present();
-        auto move = get_char(0.15);
+        auto move = get_char(1.0/60.0);
         if (move) {
             if (*move == 'x')
                 break;

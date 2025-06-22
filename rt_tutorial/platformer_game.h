@@ -14,7 +14,7 @@ public:
     double velocity_y = 0.0;
     bool on_ground = false;
     double gravity = -0.03;
-    double jump_strength = 0.09;
+    double jump_strength = 0.15;
 
     PlatformerGame(hittable_list *world, shared_ptr<sphere> player)
         : world(world), player(player) {}
