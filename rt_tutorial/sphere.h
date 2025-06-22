@@ -7,6 +7,8 @@
 
 class sphere : public hittable, public movable {
 public:
+    point3 center;
+
     sphere(const point3& center, double radius, shared_ptr<material> mat)
     : center(center), radius(std::fmax(0,radius)), mat(mat) {}
 
@@ -68,7 +70,6 @@ public:
     }
 
 private:
-    point3 center;
     double radius;
     shared_ptr<material> mat;
 };
