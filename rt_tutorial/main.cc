@@ -52,18 +52,22 @@ int main()
     int window_height = int(window_width / cam.aspect_ratio);
     SDLRenderer renderer(cam.image_width, image_height, window_width, window_height);
 
+    char moving = 's';
     while (renderer.process_events())
     {
         renderer.render(cam, world);
         renderer.present();
         char move = get_char();
-        if (move == 'q')
-        {
+        if (move == 'x') {
             exit(0);
-        }
-        else
-        {
+        } else if (move == 'c') {
+            moving = 'c';
+        } else if (move == 'p') {
+            moving = 's';
+        } else if (moving == 's') {
             movable_sphere->move(move);
+        } else if (moving == 'c') {
+            cam.move(move);
         }
     }
     return 0;

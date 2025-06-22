@@ -3,7 +3,7 @@
 
 class movable {
 public:
-    virtual void move(char& movement) {}
+    virtual void move(char &) {}
 };
 
 #endif // !MOVABLE_H

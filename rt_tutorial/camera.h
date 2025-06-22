@@ -8,13 +8,32 @@
 #include <fstream>
 #include <omp.h>
 
-class camera
+class camera : public movable
 {
 public:
     double aspect_ratio = 1.0;
     int image_width = 100;
     int samples_per_pixel = 10;
     int max_depth = 10;
+    point3 center = point3(0, 0, 0);  // Agora público
+    point3 lookat = point3(0, 0, -1); // Novo: ponto para onde a câmera olha
+
+    // Novo: método para alterar o ponto para onde a câmera olha
+    void look_at(const point3 &target)
+    {
+        lookat = target;
+    }
+
+    // Novo: método para rotacionar a direção da câmera em torno do eixo Y (esquerda/direita)
+    void rotate_yaw(double angle_rad)
+    {
+        vec3 direction = lookat - center;
+        double cos_a = cos(angle_rad);
+        double sin_a = sin(angle_rad);
+        double x = direction.x() * cos_a - direction.z() * sin_a;
+        double z = direction.x() * sin_a + direction.z() * cos_a;
+        lookat = center + vec3(x, direction.y(), z);
+    }
 
     void render(const hittable &world, const std::string &filename)
     {
@@ -89,37 +108,72 @@ public:
 
         pixel_samples_scale = 1.0 / samples_per_pixel;
 
-        center = point3(0, 0, 0);
-        // Camera
+        // Novo: direção da câmera
+        vec3 forward = unit_vector(lookat - center);
+        vec3 up = vec3(0, 1, 0);
+        vec3 right = unit_vector(cross(forward, up));
+        up = cross(right, forward);
 
-        auto focal_lenght = 1.0;
+        auto focal_length = 1.0;
         auto viewport_height = 2.0;
         auto viewport_width = viewport_height * (double(image_width) / image_height);
 
-        // Control vectors for the axes
+        auto viewport_u = viewport_width * right;
+        auto viewport_v = -viewport_height * up;
 
-        auto viewport_u = vec3(viewport_width, 0, 0);   // x axis
-        auto viewport_v = vec3(0, -viewport_height, 0); // y axis
+        pixel_delta_u = viewport_u / image_width;
+        pixel_delta_v = viewport_v / image_height;
 
-        // Delta vectors for the axes
+        auto viewport_upper_left = center + forward * focal_length - viewport_u / 2 - viewport_v / 2;
+        pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+    }
 
-        pixel_delta_u = viewport_u / image_width;  // x axis
-        pixel_delta_v = viewport_v / image_height; // y axis
-
-        // Location of P(0,0)
-
-        auto viewport_upper_left = center - vec3(0, 0, focal_lenght) // Walk from camera to the screen
-                                   - viewport_u / 2                  // Walk from center to left bound
-                                   - viewport_v / 2;                 // Walk back from the center to upper bound
-        pixel00_loc = viewport_upper_left
-                      // Walk from the 0th position to the pixel's center
-                      + 0.5 * (pixel_delta_u + pixel_delta_v);
+    void move(char &movement) override
+    {
+        // Calcula vetores relativos à direção atual
+        vec3 forward = unit_vector(lookat - center);
+        vec3 up = vec3(0, 1, 0);
+        vec3 right = unit_vector(cross(forward, up));
+        up = cross(right, forward);
+        double step = 0.01;
+        switch (movement)
+        {
+        case 'w': // Frente
+            center = center + step * forward;
+            lookat = lookat + step * forward;
+            break;
+        case 's': // Trás
+            center = center - step * forward;
+            lookat = lookat - step * forward;
+            break;
+        case 'a': // Esquerda
+            center = center - step * right;
+            lookat = lookat - step * right;
+            break;
+        case 'd': // Direita
+            center = center + step * right;
+            lookat = lookat + step * right;
+            break;
+        case 'j': // Cima
+            center = center + step * up;
+            lookat = lookat + step * up;
+            break;
+        case 'k': // Baixo
+            center = center - step * up;
+            lookat = lookat - step * up;
+            break;
+        case 'q': // Girar para a esquerda
+            rotate_yaw(-0.05);
+            break;
+        case 'e': // Girar para a direita
+            rotate_yaw(0.05);
+            break;
+        }
     }
 
 private:
     int image_height;
     double pixel_samples_scale;
-    point3 center;
     point3 pixel00_loc;
     vec3 pixel_delta_u;
     vec3 pixel_delta_v;
