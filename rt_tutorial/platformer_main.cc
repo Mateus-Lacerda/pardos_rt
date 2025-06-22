@@ -48,10 +48,9 @@ int main()
     {
         renderer.render(cam, world);
         renderer.present();
-        auto move = get_char(1.0/60.0);
+        auto move = renderer.poll_key();
         if (move) {
-            if (*move == 'x')
-                break;
+            if (*move == SDLK_x) return 0;
         }
         game.update(move);
     }

@@ -5,20 +5,22 @@
 #include "rtweekend.h"
 #include "vec3.h"
 
-class sphere : public hittable, public movable {
+class sphere : public hittable, public movable
+{
 public:
     point3 center;
 
-    sphere(const point3& center, double radius, shared_ptr<material> mat)
-    : center(center), radius(std::fmax(0,radius)), mat(mat) {}
+    sphere(const point3 &center, double radius, shared_ptr<material> mat)
+        : center(center), radius(std::fmax(0, radius)), mat(mat) {}
 
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
+    bool hit(const ray &r, interval ray_t, hit_record &rec) const override
+    {
         vec3 oc = center - r.origin();
         auto a = r.direction().lenght_squared();
         auto h = dot(r.direction(), oc);
-        auto c = oc.lenght_squared() - radius*radius;
+        auto c = oc.lenght_squared() - radius * radius;
 
-        auto discriminant = h*h - a*c;
+        auto discriminant = h * h - a * c;
         if (discriminant < 0)
             return false;
 
@@ -26,7 +28,8 @@ public:
 
         // Nearest root that lies in the acceptable range
         auto root = (h - sqrtd) / a;
-        if (!ray_t.surrounds(root)) {
+        if (!ray_t.surrounds(root))
+        {
             // If the root is not in range, try the next
             root = (h + sqrtd) / a;
             if (!ray_t.surrounds(root))
@@ -46,28 +49,32 @@ public:
         return true;
     }
 
-    void move(char& movement) override {
-        switch (movement) {
-            case 'w':
-                center = center + point3(0, 0, -0.01);
-                break;
-            case 'a':
-                center = center + point3(-0.01, 0, 0);
-                break;
-            case 's':
-                center = center + point3(0, 0, 0.01);
-                break;
-            case 'd':
-                center = center + point3(0.01, 0, 0);
-                break;
-            case 'j':
-                center = center + point3(0, 0.01, 0);
-                break;
-            case 'k':
-                center = center + point3(0, -0.01, 0);
-                break;
+    void move(char &movement) override
+    {
+        switch (movement)
+        {
+        case 'w':
+            center = center + point3(0, 0, -0.01);
+            break;
+        case 'a':
+            center = center + point3(-0.01, 0, 0);
+            break;
+        case 's':
+            center = center + point3(0, 0, 0.01);
+            break;
+        case 'd':
+            center = center + point3(0.01, 0, 0);
+            break;
+        case 'j':
+            center = center + point3(0, 0.01, 0);
+            break;
+        case 'k':
+            center = center + point3(0, -0.01, 0);
+            break;
         }
     }
+
+    double get_radius() const { return radius; }
 
 private:
     double radius;

@@ -4,6 +4,7 @@
 #include "hittable_list.h"
 #include "sphere.h"
 #include "box.h"
+#include <SDL2/SDL_keycode.h>
 #include <memory>
 
 class PlatformerGame
@@ -19,21 +20,20 @@ public:
     PlatformerGame(hittable_list *world, shared_ptr<sphere> player)
         : world(world), player(player) {}
 
-    void update(std::optional<char> input)
+    void update(std::optional<SDL_Keycode> input)
     {
         // Movimento horizontal
         if (input) {
-            char move = *input;
-            if (move == 'a')
+            if (*input == SDLK_a)
             {
                 player->center[0] -= 0.05;
             }
-            else if (move == 'd')
+            else if (*input == SDLK_d)
             {
                 player->center[0] += 0.05;
             }
             // Pulo
-            if (move == 'w' && on_ground)
+            if (*input == SDLK_w && on_ground)
             {
                 velocity_y = jump_strength;
                 on_ground = false;

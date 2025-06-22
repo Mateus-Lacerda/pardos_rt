@@ -1,7 +1,6 @@
 #include "sdl_renderer.h"
 #include <SDL2/SDL.h>
 #include <omp.h>
-#include <thread>
 #include <vector>
 #include <algorithm>
 
@@ -58,4 +57,15 @@ bool SDLRenderer::process_events()
             return false;
     }
     return true;
+}
+
+std::optional<SDL_Keycode> SDLRenderer::poll_key()
+{
+    SDL_Event e;
+   if (SDL_WaitEventTimeout(&e, 33)) {
+        if (e.type == SDL_KEYDOWN) {
+            return e.key.keysym.sym;
+        }
+    }
+    return std::nullopt;
 }

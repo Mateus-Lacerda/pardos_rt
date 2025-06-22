@@ -3,6 +3,7 @@
 
 #include "hittable_list.h"
 #include "camera.h"
+#include <SDL2/SDL_keycode.h>
 #include <vector>
 #include <cstdint>
 
@@ -17,6 +18,7 @@ public:
     int width, height;               // image size
     int window_width, window_height; // window size
     std::vector<uint32_t> pixels;
+    std::optional<SDL_Keycode> poll_key();
 
 private:
     struct SDL_Window *window;
