@@ -3,10 +3,12 @@
 
 #include "hittable.h"
 #include "rtweekend.h"
+#include "vec3.h"
 
-class sphere : public hittable {
+class sphere : public hittable, public movable {
 public:
-    sphere(const point3& center, double radius) : center(center), radius(std::fmax(0,radius)) {}
+    sphere(const point3& center, double radius, shared_ptr<material> mat)
+    : center(center), radius(std::fmax(0,radius)), mat(mat) {}
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         vec3 oc = center - r.origin();
@@ -37,13 +39,38 @@ public:
         // Sets the normal of the record and determines if its a front facing ray or not
         rec.set_face_normal(r, outward_normal);
         // rec.normal = (rec.p - center) / radius;
+        rec.mat = mat;
 
         return true;
+    }
+
+    void move(char& movement) override {
+        switch (movement) {
+            case 'w':
+                center = center + point3(0, 0, -0.01);
+                break;
+            case 'a':
+                center = center + point3(-0.01, 0, 0);
+                break;
+            case 's':
+                center = center + point3(0, 0, 0.01);
+                break;
+            case 'd':
+                center = center + point3(0.01, 0, 0);
+                break;
+            case 'j':
+                center = center + point3(0, 0.01, 0);
+                break;
+            case 'k':
+                center = center + point3(0, -0.01, 0);
+                break;
+        }
     }
 
 private:
     point3 center;
     double radius;
+    shared_ptr<material> mat;
 };
 
 #endif // !SPHERE_H

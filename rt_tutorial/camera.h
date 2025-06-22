@@ -3,7 +3,9 @@
 
 #include "hittable.h"
 #include "rtweekend.h"
+#include "material.h"
 #include "vec3.h"
+#include <fstream>
 
 class camera {
 public:
@@ -12,10 +14,15 @@ public:
     int    samples_per_pixel = 10;
     int    max_depth         = 10;
 
-    void render(const hittable& world) {
+    void render(const hittable& world, const std::string& filename) {
         initialize();
 
-        std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+        std::ofstream out(filename, std::ios::out | std::ios::trunc);
+        if (!out) {
+            std::cerr << "Failed to open file: " << filename << std::endl;
+            return;
+        }
+        out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
         for (int j = 0; j < image_height; j++) {
             std::clog << "\nScanlines remaining: " << (image_height - j) << ' ' << std::flush;
@@ -42,11 +49,12 @@ public:
                 //
                 // color pixel_color = ray_color(r, world);
 
-                write_color(std::cout, pixel_samples_scale * pixel_color);
+                write_color(out, pixel_samples_scale * pixel_color);
             }
         }
 
         std::clog << "\rDone                           \n";
+        out.close();
     }
 
 private:
@@ -124,8 +132,14 @@ private:
             // Random ray diffusing
             // vec3 direction = random_on_hemisphere(rec.normal);
             // Lambertian distribution diffusing
-            vec3 direction = rec.normal + random_unit_vector();
-            return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
+            // vec3 direction = rec.normal + random_unit_vector();
+            // return 0.5 * ray_color(ray(rec.p, direction), depth-1, world);
+            // Material specific diffusing
+            ray scattered;
+            color attenuation;
+            if (rec.mat->scatter(r, rec, attenuation, scattered))
+                return attenuation * ray_color(scattered, depth-1, world);
+            return color(0,0,0);
         }
 
         // Lerp
