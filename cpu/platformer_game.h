@@ -15,15 +15,15 @@ public:
     double velocity_y = 0.0;
     bool on_ground = false;
     double gravity = -0.03;
-    double jump_strength = 0.15;
+    double jump_strength = 0.2;
 
     PlatformerGame(hittable_map *world, shared_ptr<sphere> player)
         : world(world), player(player) {}
 
     void update(std::optional<SDL_Keycode> input)
     {
-        // Movimento horizontal
         if (input) {
+            // Movimento horizontal
             if (*input == SDLK_a)
             {
                 player->center[0] -= 0.05;
@@ -32,8 +32,16 @@ public:
             {
                 player->center[0] += 0.05;
             }
+            else if (*input == SDLK_w)
+            {
+                player->center[2] -= 0.05;
+            }
+            else if (*input == SDLK_s)
+            {
+                player->center[2] += 0.05;
+            }
             // Pulo
-            if (*input == SDLK_w && on_ground)
+            if (*input == SDLK_SPACE && on_ground)
             {
                 velocity_y = jump_strength;
                 on_ground = false;

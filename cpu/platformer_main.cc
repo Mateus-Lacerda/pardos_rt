@@ -1,4 +1,3 @@
-#include "platformer_game.h"
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
@@ -7,7 +6,7 @@
 #include "plane.h"
 #include "box.h"
 #include "cylinder.h"
-#include <iostream>
+#include "platformer_game.h"
 
 int main()
 {
@@ -26,7 +25,7 @@ int main()
     world.add(make_shared<box>(point3(0.22, -0.1, -1.21), point3(0.38, 0.1, -1.19), material_window));
     world.add(make_shared<cylinder>(point3(0.35, 0.3, -1.5), 0.05, 0.25, material_chimney));
     world.add(make_shared<plane>(point3(0.3, -0.49, -0.7), vec3(0, 1, 0), material_lake));
-    auto player = make_shared<sphere>(point3(0, 0, -0.2), 0.05, make_shared<lambertian>(color(0.8, 0.2, 0.2)));
+    auto player = make_shared<sphere>(point3(0, 0, -0.8), 0.05, make_shared<lambertian>(color(0.8, 0.2, 0.2)));
     world.add(player);
 
     camera cam;

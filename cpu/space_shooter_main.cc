@@ -1,15 +1,14 @@
-#include "space_shooter_game.h"
+#include <SDL2/SDL_timer.h>
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include "camera.h"
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
 #include "sdl_renderer.h"
 #include "plane.h"
-#include "box.h"
-#include <SDL2/SDL_timer.h>
-#include <iostream>
-#include <cstdlib>
-#include <ctime>
+#include "space_shooter_game.h"
 
 int main()
 {
@@ -24,7 +23,7 @@ int main()
 
         camera cam;
         cam.aspect_ratio = 16.0 / 9.0;
-        cam.image_width = 120;
+        cam.image_width = 200;
         cam.samples_per_pixel = 20;
         cam.max_depth = 20;
         cam.center = point3(0, 0, -0.5);
