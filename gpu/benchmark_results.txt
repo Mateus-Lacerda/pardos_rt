@@ -1,0 +1,14 @@
+--- CUDA Raytracer Benchmark Results ---
+Image Dimensions: 80x45
+Samples Per Pixel: 40
+Max Ray Depth: 10
+----------------------------------------
+Total Frames Rendered: 998
+Average Frame Time (ms): 8.94
+Minimum Frame Time (ms): 4.11
+Maximum Frame Time (ms): 12.71
+----------------------------------------
+Average FPS: 111.83
+Minimum FPS: 78.67
+Maximum FPS: 243.17
+----------------------------------------

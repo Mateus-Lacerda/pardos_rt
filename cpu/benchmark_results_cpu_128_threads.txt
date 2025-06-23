@@ -1,0 +1,14 @@
+--- CPU Raytracer Benchmark Results ---
+Image Dimensions: 80x45
+Samples Per Pixel: 40
+Max Ray Depth: 10
+----------------------------------------
+Total Frames Rendered: 1255
+Average Frame Time (ms): 26.35
+Minimum Frame Time (ms): 7.63
+Maximum Frame Time (ms): 44.25
+----------------------------------------
+Average FPS: 37.96
+Minimum FPS: 22.60
+Maximum FPS: 131.15
+----------------------------------------

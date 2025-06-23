@@ -6,6 +6,7 @@
 #include <SDL2/SDL_keycode.h>
 #include <vector>
 #include <cstdint>
+#include <optional>
 
 class SDLRenderer
 {
