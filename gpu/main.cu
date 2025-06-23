@@ -1,28 +1,31 @@
+// Ordem de includes corrigida para garantir que as definições completas
+// das classes sejam visíveis antes de serem usadas.
 #include "rtweekend.h"
 
 #include "camera.h"
-#include "hittable_list.h" // Now using hittable_list
-#include "material.h"
+#include "hittable_list.h" // Definição completa primeiro
+#include "material.h"      // Definição completa primeiro
+#include "sdl_renderer.h"  // Agora o renderer, que usa as declarações
 #include "sphere.h"
-#include "sdl_renderer.h"
 #include "plane.h"
 #include "box.h"
 #include "cylinder.h"
 #include "movable.h"
 
+#include <iostream>
+
 int main()
 {
-    // Changed from hittable_map to hittable_list for compatibility with SDLRenderer
-    hittable_map world;
+    hittable_list world;
 
     // Materiais
     auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
     auto material_wall = make_shared<lambertian>(color(0.7, 0.4, 0.2));
     auto material_roof = make_shared<lambertian>(color(0.5, 0.1, 0.1));
-    auto material_window = make_shared<metal>(color(0.7, 0.8, 0.9), 0.0); // Added fuzz to metal
+    auto material_window = make_shared<metal>(color(0.7, 0.8, 0.9), 0.0);
     auto material_door = make_shared<lambertian>(color(0.4, 0.2, 0.1));
     auto material_chimney = make_shared<lambertian>(color(0.3, 0.3, 0.3));
-    auto material_glass = make_shared<metal>(1.5); // Example dielectric material
+    auto material_glass = make_shared<dielectric>(1.5);
 
     // Chão
     world.add(make_shared<plane>(point3(0, -0.5, 0), vec3(0, 1, 0), material_ground));
@@ -39,68 +42,70 @@ int main()
     // Chaminé (cilindro)
     world.add(make_shared<cylinder>(point3(0.35, 0.3, -1.5), 0.05, 0.25, material_chimney));
 
-    // Example sphere with glass material
+    // Esfera de vidro
     world.add(make_shared<sphere>(point3(-0.25, 0.1, -1.0), 0.1, material_glass));
 
+    // Personagem/Jogador
     auto player = make_shared<sphere>(point3(0, 0, -1), 0.05, make_shared<lambertian>(color(0.8, 0.2, 0.2)));
     world.add(player);
 
     camera cam;
     cam.aspect_ratio = 16.0 / 9.0;
-    cam.image_width = 800;       // Increased resolution for better output
-    cam.samples_per_pixel = 100; // Increased samples for smoother output
-    cam.max_depth = 50;
+    cam.image_width = 80;
+    cam.samples_per_pixel = 40;
+    cam.max_depth = 10;
     cam.center = point3(0, 0, 0.5);
     cam.lookat = point3(0, 0, -1.5);
-
-    // Camera defocus and motion blur settings (example values)
-    cam.defocus_angle = 0.6; // Small angle for depth of field
-    cam.focus_dist = 1.8;    // Focus near the house
+    cam.defocus_angle = 0.6;
+    cam.focus_dist = 1.8;
     cam.time0 = 0.0;
     cam.time1 = 1.0;
 
-    // IMPORTANT: Initialize camera parameters once before the rendering loop
     cam.initialize();
 
-    int image_height = int(cam.image_width / cam.aspect_ratio);
-    int window_width = 1280; // SDL window resolution
-    int window_height = int(window_width / cam.aspect_ratio);
+    int image_height = static_cast<int>(cam.image_width / cam.aspect_ratio);
+    int window_width = 1280;
+    int window_height = static_cast<int>(window_width / cam.aspect_ratio);
     SDLRenderer renderer(cam.image_width, image_height, window_width, window_height);
 
-    char moving = 's'; // 's' for scene/player movement, 'c' for camera movement
+    char moving = 's'; // 's' para sphere (player), 'c' para camera
     while (renderer.process_events())
     {
-        renderer.render(cam, world); // Render scene using CUDA-accelerated renderer
-        renderer.present();          // Present rendered image to SDL window
+        renderer.render(cam, world);
+        renderer.present();
 
-        auto move = renderer.poll_key(); // Poll for key events without blocking indefinitely
-        if (move)
+        auto move_keycode = renderer.poll_key();
+        if (move_keycode)
         {
-            if (*move == 'x') // Exit on 'x'
+            char move_char = static_cast<char>(*move_keycode);
+
+            switch (move_char)
             {
+            case 'x':
                 exit(0);
-            }
-            else if (*move == 'c') // Switch to camera movement mode
-            {
+                break;
+            case 'c':
                 moving = 'c';
                 std::cout << "Camera movement mode\n";
-            }
-            else if (*move == 'p') // Switch to player movement mode
-            {
+                break;
+            case 'p':
                 moving = 's';
                 std::cout << "Player movement mode\n";
+                break;
+            default:
+                if (moving == 's')
+                {
+                    player->move(move_char);
+                }
+                else if (moving == 'c')
+                {
+                    cam.move(move_char);
+                }
+                cam.initialize(); // Re-inicializa a câmera após qualquer movimento
+                break;
             }
-            else if (moving == 's') // Move player if in player mode
-            {
-                player->move(*move);
-            }
-            else if (moving == 'c') // Move camera if in camera mode
-            {
-                cam.move(*move);
-            }
-            // Re-initialize camera after movement to update internal vectors
-            cam.initialize();
         }
     }
+
     return 0;
 }

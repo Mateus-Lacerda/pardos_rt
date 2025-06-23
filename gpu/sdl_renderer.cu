@@ -7,29 +7,18 @@
 
 // Include concrete primitive headers for dynamic_pointer_cast
 // These are needed to correctly identify the type of hittable object
-// from the polymorphic hittable_list for conversion to GPU structs.
+// from the polymorphic hittable_map for conversion to GPU structs.
 #include "sphere.h"
 #include "plane.h"
 #include "box.h"
 #include "cylinder.h"
-#include "lambertian.h" // For casting materials
-#include "metal.h"      // For casting materials
-#include "dielectric.h" // For casting materials
+#include "material.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "vec3.h" // For color and vec3 definitions
 
-// Definition of the GPUCamera struct (defined in cuda_raytracer_kernel.cu)
-// It's crucial that the definition here matches the one in cuda_raytracer_kernel.cu
-struct __device__ GPUCamera
-{
-    point3 center;
-    point3 pixel00_loc;
-    vec3 pixel_delta_u;
-    vec3 pixel_delta_v;
-    vec3 u, v, w;          // Camera basis vectors for defocus disk
-    double defocus_disk_u; // Length of defocus_disk_u
-    double defocus_disk_v; // Length of defocus_disk_v
-    double time0;
-    double time1;
-};
+// The camera class and the GPUCamera struct are now included from camera.h
+#include "camera.h"
 
 // Extern declaration for the CUDA kernel
 // This tells the compiler that `render_kernel` is defined elsewhere (in cuda_raytracer_kernel.cu)
@@ -58,8 +47,8 @@ extern "C" __global__ void render_kernel(
 
 // Constructor: Initializes SDL and allocates initial GPU memory
 SDLRenderer::SDLRenderer(int img_w, int img_h, int win_w, int win_h)
-    : width(img_w), height(img_h), window_width(win_w), window_height(win_h), pixels_host(img_w * img_h, 0),
-      // Initialize all device pointers to nullptr
+    : width(img_w), height(img_h), window_width(win_w), window_height(win_h),
+      pixels_host(img_w * img_h, 0), pixels_gpu_result(img_w * img_h), // Initialize the new buffer
       d_pixels(nullptr), d_rand_states(nullptr),
       d_spheres(nullptr), d_planes(nullptr), d_boxes(nullptr), d_cylinders(nullptr),
       // Initialize counts to zero
@@ -135,10 +124,11 @@ void SDLRenderer::setup_gpu_scene(const hittable_list &world)
     std::vector<GPUCylinder> host_cylinders;
 
     // Iterate through the world's objects and convert them to GPU-compatible structs
+    // With hittable_list, obj_ptr is now correctly a shared_ptr<hittable>.
     for (const auto &obj_ptr : world.objects)
     {
         // Use dynamic_pointer_cast to identify the concrete type of each hittable
-        if (auto sphere_ptr = std::dynamic_pointer_cast<sphere>(obj_ptr))
+        if (auto sphere_ptr = std::dynamic_pointer_cast<sphere>(obj_ptr)) // This now works correctly
         {
             GPUSphere gpu_s;
             gpu_s.center = sphere_ptr->center;
@@ -337,8 +327,7 @@ void SDLRenderer::render(const camera &cam, const hittable_list &world)
 
     // 2. Prepare GPUCamera parameters from the host camera object
     GPUCamera gpu_cam_params;
-    cam.initialize(); // Ensure camera parameters are up-to-date on host side
-                      // (e.g., pixel00_loc, pixel_delta_u, pixel_delta_v are computed)
+    // The camera is already initialized in main.cu before render is called. This call is redundant and violates const.
 
     // Copy relevant camera parameters to the GPUCamera struct
     gpu_cam_params.center = cam.center;
@@ -379,7 +368,7 @@ void SDLRenderer::render(const camera &cam, const hittable_list &world)
     // 5. Synchronize with the GPU and copy rendered pixels back to host memory
     cudaDeviceSynchronize(); // Wait for the kernel to complete
     CudaCheckError();
-    cudaMemcpy(pixels_host.data(), d_pixels, width * height * sizeof(color), cudaMemcpyDeviceToHost);
+    cudaMemcpy(pixels_gpu_result.data(), d_pixels, width * height * sizeof(color), cudaMemcpyDeviceToHost);
     CudaCheckError();
 
     // 6. Free scene-specific GPU memory after rendering is complete
@@ -391,11 +380,11 @@ void SDLRenderer::render(const camera &cam, const hittable_list &world)
     {
         for (int x = 0; x < width; ++x)
         {
-            color pixel_color_f = pixels_host[y * width + x]; // Already averaged and clamped in kernel
+            color pixel_color_f = pixels_gpu_result[y * width + x]; // Read from the correct buffer
             int ir = static_cast<int>(255.999 * pixel_color_f.x());
             int ig = static_cast<int>(255.999 * pixel_color_f.y());
             int ib = static_cast<int>(255.999 * pixel_color_f.z());
-            pixels_host[y * width + x] = (255 << 24) | (ir << 16) | (ig << 8) | ib; // ARGB format
+            pixels_host[y * width + x] = (255 << 24) | (ir << 16) | (ig << 8) | ib; // Write to the final texture buffer
         }
     }
 }

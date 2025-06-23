@@ -9,20 +9,22 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Source files (use full paths relative to the script's directory)
 # CUDA source files: main.cu (new!) and the kernel file
-CUDA_SOURCES="${SCRIPT_DIR}/main.cu ${SCRIPT_DIR}/cuda_raytracer_kernel.cu"
+CUDA_SOURCES="${SCRIPT_DIR}/main.cu ${SCRIPT_DIR}/cuda_raytracer_kernel.cu ${SCRIPT_DIR}/sdl_renderer.cu"
 # C++ source files: only sdl_renderer.cc now (and any other pure .cc files)
-CPP_SOURCES="${SCRIPT_DIR}/sdl_renderer.cc"
+CPP_SOURCES=""
 
 # Intermediate object files
 # Object files for CUDA sources (each .cu compiles to its own .o)
 CUDA_OBJS_LIST="" # This will store the list of compiled CUDA object files
 # Object files for C++ sources
 CPP_OBJS=""
-for src_path in $CPP_SOURCES; do
-    filename=$(basename -- "$src_path")
-    base="${filename%.cc}"
-    CPP_OBJS+="${SCRIPT_DIR}/${base}.o "
-done
+if [ -n "$CPP_SOURCES" ]; then
+    for src_path in $CPP_SOURCES; do
+        filename=$(basename -- "$src_path")
+        base="${filename%.cc}"
+        CPP_OBJS+="${SCRIPT_DIR}/${base}.o "
+    done
+fi
 
 # Output executable name
 EXECUTABLE="${SCRIPT_DIR}/raytracer_cuda"
@@ -58,22 +60,24 @@ for src_cu in $CUDA_SOURCES; do
 done
 echo "All CUDA sources compiled successfully."
 
-echo "Compiling C++ sources..."
-# Compile C++ source files (`sdl_renderer.cc`)
-for src_cpp in $CPP_SOURCES; do
-    filename=$(basename -- "$src_cpp")
-    base="${filename%.cc}"
-    obj_cpp="${SCRIPT_DIR}/${base}.o"
-    
-    echo "  Compiling $src_cpp to $obj_cpp"
-    # -c: Compile only (no linking)
-    $GPP -std=c++17 -O2 -Wall -Wextra -fopenmp -c "$src_cpp" $INCLUDE_DIRS -o "$obj_cpp"
-    if [ $? -ne 0 ]; then
-        echo "C++ compilation of $src_cpp failed!"
-        exit 1
-    fi
-done
-echo "All C++ sources compiled successfully."
+if [ -n "$CPP_SOURCES" ]; then
+    echo "Compiling C++ sources..."
+    # Compile C++ source files
+    for src_cpp in $CPP_SOURCES; do
+        filename=$(basename -- "$src_cpp")
+        base="${filename%.cc}"
+        obj_cpp="${SCRIPT_DIR}/${base}.o"
+        
+        echo "  Compiling $src_cpp to $obj_cpp"
+        # -c: Compile only (no linking)
+        $GPP -std=c++17 -O2 -Wall -Wextra -fopenmp -c "$src_cpp" $INCLUDE_DIRS -o "$obj_cpp"
+        if [ $? -ne 0 ]; then
+            echo "C++ compilation of $src_cpp failed!"
+            exit 1
+        fi
+    done
+    echo "All C++ sources compiled successfully."
+fi
 
 
 echo "Linking..."

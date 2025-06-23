@@ -2,45 +2,26 @@
 #define HITTABLE_LIST_H
 
 #include "hittable.h"
-#include "rtweekend.h"
+#include <vector>
+#include <memory> // For shared_ptr
 
-#include <unordered_map>
-#include <string>
-
-class hittable_map : public hittable {
+// A host-side container for hittable objects.
+// This class is used on the CPU to build the scene. It does not perform any ray-object intersections itself.
+// The objects it holds are converted to GPU-compatible structs by the renderer.
+class hittable_list : public hittable
+{
 public:
-    std::unordered_map<std::string, shared_ptr<hittable>> objects;
+    std::vector<shared_ptr<hittable>> objects;
 
-    hittable_map() {}
-    hittable_map(shared_ptr<hittable> object) { add(object); }
+    hittable_list() {}
+    hittable_list(shared_ptr<hittable> object) { add(object); }
 
     void clear() { objects.clear(); }
 
-    void add(shared_ptr<hittable> object) {
-        // Assume que hittable tem um método id() que retorna std::string
-        objects[object->id()] = object;
-    }
-
-    void remove(const std::string& id) {
-        objects.erase(id);
-    }
-
-    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
-        hit_record temp_rec;
-        bool hit_anything = false;
-        auto closest_so_far = ray_t.max;
-
-        for (const auto& [name, object] : objects) {
-            if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
-                hit_anything = true;
-                closest_so_far = temp_rec.t;
-                rec = temp_rec;
-            }
-        }
-
-        return hit_anything;
+    void add(shared_ptr<hittable> object)
+    {
+        objects.push_back(object);
     }
 };
 
 #endif // !HITTABLE_LIST_H
-

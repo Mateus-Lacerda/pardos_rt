@@ -5,8 +5,24 @@
 #include "rtweekend.h"
 #include "material.h" // For material (though scatter is gone)
 #include "vec3.h"
+#include "movable.h" // For movable base class
 // #include <fstream> // Not needed if render is removed
 // #include <omp.h>   // Not needed if OpenMP pragmas are removed
+
+// GPU-compatible struct for camera parameters.
+// This is a plain data struct that can be copied to the GPU.
+struct GPUCamera
+{
+    point3 center;
+    point3 pixel00_loc;
+    vec3 pixel_delta_u;
+    vec3 pixel_delta_v;
+    vec3 u, v, w;          // Camera basis vectors
+    double defocus_disk_u; // Length of defocus_disk_u
+    double defocus_disk_v; // Length of defocus_disk_v
+    double time0;
+    double time1;
+};
 
 class camera : public movable
 {

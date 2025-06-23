@@ -7,21 +7,14 @@
 #include "hittable.h"      // <--- Include hittable.h SECOND, as it uses GPUMaterial
 #include "cuda_utils.cuh"  // For device-side randoms
 #include "curand_kernel.h" // For curandState
-
-// --- Device-side Camera Parameters Structure ---
-// REMOVED __attribute__((device)) (and implicit __device__ keyword) as it's for functions, not struct declarations.
-struct GPUCamera
-{
-    point3 center;
-    point3 pixel00_loc;
-    vec3 pixel_delta_u;
-    vec3 pixel_delta_v;
-    vec3 u, v, w;          // Camera basis vectors
-    double defocus_disk_u; // Length of defocus_disk_u
-    double defocus_disk_v; // Length of defocus_disk_v
-    double time0;
-    double time1;
-};
+#include "ray.h"           // For ray class
+#include "vec3.h"          // For vec3 class
+#include "interval.h"      // For interval class
+#include "color.h"         // For color type
+#include "sphere.h"        // For GPUSphere
+#include "plane.h"         // For GPUPlane
+#include "box.h"           // For GPUBox
+#include "cylinder.h"      // For GPUCylinder
 
 // External declaration for the CUDA kernel (to be linked from sdl_renderer.cc)
 extern "C" __global__ void render_kernel(
@@ -39,10 +32,10 @@ extern "C" __global__ void render_kernel(
 
 // __device__ hit function for GPUSphere
 __device__ bool hit_sphere_gpu(
-    const GPUSphere &s, const ray &r, interval ray_t, hit_record &rec, double time)
+    const GPUSphere &s, const ray &r, interval ray_t, hit_record &rec)
 {
-    point3 center = s.is_moving ? s.center + time * s.center_vec : s.center;
-    vec3 oc = r.origin() - center;
+    point3 current_center = s.is_moving ? s.center + r.time() * s.center_vec : s.center;
+    vec3 oc = r.origin() - current_center;
     auto a = r.direction().lenght_squared();
     auto h = dot(oc, r.direction());
     auto c = oc.lenght_squared() - s.radius * s.radius;
@@ -64,7 +57,7 @@ __device__ bool hit_sphere_gpu(
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    vec3 outward_normal = (rec.p - center) / s.radius;
+    vec3 outward_normal = (rec.p - current_center) / s.radius;
     rec.set_face_normal(r, outward_normal);
     rec.mat = s.material_data; // Assign the GPU material data
     return true;
@@ -203,14 +196,14 @@ __device__ bool scatter_gpu(
         if (scatter_direction.near_zero())
             scatter_direction = rec.normal;
 
-        scattered = ray(rec.p, scatter_direction);
+        scattered = ray(rec.p, scatter_direction, r_in.time());
         attenuation = mat.lambertian_data.albedo;
         return true;
     }
     case 1:
     { // Metal
         vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
-        scattered = ray(rec.p, reflected + mat.metal_data.fuzz * random_unit_vector_device(rand_state));
+        scattered = ray(rec.p, reflected + mat.metal_data.fuzz * random_unit_vector_device(rand_state), r_in.time());
         attenuation = mat.metal_data.albedo;
         return (dot(scattered.direction(), rec.normal) > 0);
     }
@@ -247,7 +240,7 @@ __device__ bool scatter_gpu(
             direction = refract_vec(unit_direction, rec.normal, refraction_ratio);
         }
 
-        scattered = ray(rec.p, direction);
+        scattered = ray(rec.p, direction, r_in.time());
         return true;
     }
     default:
@@ -261,8 +254,7 @@ __device__ color ray_color_gpu(
     const GPUSphere *d_spheres, int num_spheres,
     const GPUPlane *d_planes, int num_planes,
     const GPUBox *d_boxes, int num_boxes,
-    const GPUCylinder *d_cylinders, int num_cylinders,
-    double time0, double time1)
+    const GPUCylinder *d_cylinders, int num_cylinders)
 {
     ray current_r = r;
     color accumulated_color = color(1.0, 1.0, 1.0);
@@ -277,7 +269,7 @@ __device__ color ray_color_gpu(
         for (int i = 0; i < num_spheres; ++i)
         {
             hit_record temp_rec;
-            if (hit_sphere_gpu(d_spheres[i], current_r, interval(ray_t.min, closest_so_far), temp_rec, random_double_device(time0, time1, rand_state)))
+            if (hit_sphere_gpu(d_spheres[i], current_r, interval(ray_t.min, closest_so_far), temp_rec))
             {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
@@ -365,15 +357,18 @@ extern "C" __global__ void render_kernel(
     // Initialize CURAND state for this thread using a unique seed
     curand_init(1234 + (j * image_width + i), 0, 0, rand_state);
 
+    // Monte Carlo Integration: Accumulate color over multiple samples per pixel.
+    // This loop handles anti-aliasing, soft shadows, diffuse reflections, and depth of field.
     color pixel_color(0, 0, 0);
     for (int s = 0; s < samples_per_pixel; ++s)
     {
+        // Get a randomly sampled point within the pixel for anti-aliasing
         auto r_double1_pixel = random_double_device(rand_state);
         auto r_double2_pixel = random_double_device(rand_state);
-
         auto pixel_center = d_camera_params.pixel00_loc + (i * d_camera_params.pixel_delta_u) + (j * d_camera_params.pixel_delta_v);
         auto pixel_sample = pixel_center + (r_double1_pixel * d_camera_params.pixel_delta_u) + (r_double2_pixel * d_camera_params.pixel_delta_v);
 
+        // Get a random ray origin from the camera defocus disk for depth of field
         point3 ray_origin = d_camera_params.center;
         if (d_camera_params.defocus_disk_u > 1e-8 || d_camera_params.defocus_disk_v > 1e-8)
         {
@@ -384,17 +379,18 @@ extern "C" __global__ void render_kernel(
             ray_origin = d_camera_params.center + (p_disk.x() * d_camera_params.u * d_camera_params.defocus_disk_u) + (p_disk.y() * d_camera_params.v * d_camera_params.defocus_disk_v);
         }
 
+        // Get a random time for motion blur
         double ray_time = random_double_device(d_camera_params.time0, d_camera_params.time1, rand_state);
-        ray r_single_sample(ray_origin, pixel_sample - ray_origin);
+        ray r_single_sample(ray_origin, pixel_sample - ray_origin, ray_time);
 
+        // Add the color from this single sample to the accumulator
         pixel_color += ray_color_gpu(r_single_sample, max_depth, rand_state,
                                      d_spheres, num_spheres,
                                      d_planes, num_planes,
                                      d_boxes, num_boxes,
-                                     d_cylinders, num_cylinders,
-                                     d_camera_params.time0, d_camera_params.time1);
+                                     d_cylinders, num_cylinders);
     }
-    pixel_color /= samples_per_pixel;
+    pixel_color /= samples_per_pixel; // Average the color
 
     pixel_color.e[0] = fmax(0.0, fmin(1.0, pixel_color.x()));
     pixel_color.e[1] = fmax(0.0, fmin(1.0, pixel_color.y()));
