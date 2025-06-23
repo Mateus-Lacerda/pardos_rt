@@ -70,12 +70,20 @@ Neste caso, a versão com OpenMP (`static` schedule) foi **ligeiramente mais len
 
 #### 4.1.2. OpenMP (Dynamic Schedule) vs. Sequencial (CPU)
 Esta comparação avalia o ganho de desempenho ao paralelizar o código CPU com OpenMP usando `schedule(dynamic)`.
-$$ \text{Speedup} = \frac{\text{Tempo Médio (Sequencial)}}{\text{Tempo Médio (OpenMP Dynamic)}} = \frac{25.85 \, \text{ms}}{24.38 \, \text{ms}} \approx 1.06 \times $$
+
+$$
+\text{Speedup} = \frac{\text{Tempo Médio (Sequencial)}}{\text{Tempo Médio (OpenMP Dynamic)}} = \frac{25.85 \, \text{ms}}{24.38 \, \text{ms}} \approx 1.06 \times
+$$
+
 A versão com OpenMP (`dynamic` schedule) foi **ligeiramente mais rápida** que a versão sequencial, indicando que para esta carga de trabalho, o balanceamento de carga dinâmico pode ser benéfico.
 
 #### 4.1.3. OpenMP (Dynamic Schedule) vs. OpenMP (Static Schedule)
 Comparando as duas estratégias de agendamento do OpenMP.
-$$ \text{Speedup} = \frac{\text{Tempo Médio (OpenMP Static)}}{\text{Tempo Médio (OpenMP Dynamic)}} = \frac{26.35 \, \text{ms}}{24.38 \, \text{ms}} \approx 1.08 \times $$
+
+$$
+\text{Speedup} = \frac{\text{Tempo Médio (OpenMP Static)}}{\text{Tempo Médio (OpenMP Dynamic)}} = \frac{26.35 \, \text{ms}}{24.38 \, \text{ms}} \approx 1.08 \times
+$$
+
 A versão com `dynamic` schedule é aproximadamente **1.08 vezes mais rápida** que a versão com `static` schedule, sugerindo que o balanceamento de carga dinâmico é mais adequado para esta tarefa.
 
 #### 4.1.4. CUDA vs. Sequencial (CPU)
