@@ -24,7 +24,7 @@ SDLRenderer::~SDLRenderer()
 void SDLRenderer::render(camera &cam, hittable_map &world)
 {
     cam.initialize(); // Garante que a câmera está pronta antes do paralelismo
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(dynamic)
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)

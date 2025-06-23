@@ -3,12 +3,12 @@ Image Dimensions: 80x45
 Samples Per Pixel: 40
 Max Ray Depth: 10
 ----------------------------------------
-Total Frames Rendered: 89
-Average Frame Time (ms): 32.18
-Minimum Frame Time (ms): 9.63
-Maximum Frame Time (ms): 44.73
+Total Frames Rendered: 1185
+Average Frame Time (ms): 24.38
+Minimum Frame Time (ms): 7.41
+Maximum Frame Time (ms): 164.27
 ----------------------------------------
-Average FPS: 31.08
-Minimum FPS: 22.36
-Maximum FPS: 103.85
+Average FPS: 41.02
+Minimum FPS: 6.09
+Maximum FPS: 134.89
 ----------------------------------------
