@@ -20,8 +20,8 @@ Os dados foram coletados do arquivo `cpu/benchmark_results_cpu.txt` (versão CPU
 | Métrica                 | Valor (ms) | Valor (FPS) |
 |-------------------------|------------|-------------|
 | Tempo Médio de Quadro   | 25.85      | 38.68       |
-| Tempo Mínimo de Quadro  | 11.65      | 85.83       |
-| Tempo Máximo de Quadro  | 64.26      | 15.56       |
+| Tempo Mínimo de Quadro  | 11.65      | 15.56       |
+| Tempo Máximo de Quadro  | 64.26      | 85.83       |
 | Total de Quadros        | 1208       | N/A         |
 
 ### 3.2. Desempenho da Versão CPU (OpenMP)
@@ -40,8 +40,8 @@ Os dados foram coletados do arquivo `gpu/benchmark_results.txt`.
 | Métrica                 | Valor (ms) | Valor (FPS) |
 |-------------------------|------------|-------------|
 | Tempo Médio de Quadro   | 8.94       | 111.83      |
-| Tempo Mínimo de Quadro  | 4.11       | 243.17      |
-| Tempo Máximo de Quadro  | 12.71      | 78.67       |
+| Tempo Mínimo de Quadro  | 4.11       | 78.67       |
+| Tempo Máximo de Quadro  | 12.71      | 243.17      |
 | Total de Quadros        | 998        | N/A         |
 
 ## 4. Análise de Desempenho
