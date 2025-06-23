@@ -61,7 +61,11 @@ Nesta seção, comparamos o desempenho entre as três versões do ray tracer: CP
 
 #### 4.1.1. OpenMP (Static Schedule) vs. Sequencial (CPU)
 Esta comparação avalia o ganho de desempenho ao paralelizar o código CPU com OpenMP usando `schedule(static)`.
-$$ \text{Speedup} = \frac{\text{Tempo Médio (Sequencial)}}{\text{Tempo Médio (OpenMP Static)}} = \frac{25.85 \, \text{ms}}{26.35 \, \text{ms}} \approx 0.98 \times $$
+
+$$
+\text{Speedup} = \frac{\text{Tempo Médio (Sequencial)}}{\text{Tempo Médio (OpenMP Static)}} = \frac{25.85 \, \text{ms}}{26.35 \, \text{ms}} \approx 0.98 \times
+$$
+
 Neste caso, a versão com OpenMP (`static` schedule) foi **ligeiramente mais lenta** que a versão sequencial. Isso pode ocorrer devido ao *overhead* de criação e gerenciamento de threads, que pode superar os ganhos de paralelismo em cenas de baixa complexidade ou quando um número excessivo de threads é utilizado para o hardware em questão.
 
 #### 4.1.2. OpenMP (Dynamic Schedule) vs. Sequencial (CPU)
@@ -74,11 +78,8 @@ Comparando as duas estratégias de agendamento do OpenMP.
 $$ \text{Speedup} = \frac{\text{Tempo Médio (OpenMP Static)}}{\text{Tempo Médio (OpenMP Dynamic)}} = \frac{26.35 \, \text{ms}}{24.38 \, \text{ms}} \approx 1.08 \times $$
 A versão com `dynamic` schedule é aproximadamente **1.08 vezes mais rápida** que a versão com `static` schedule, sugerindo que o balanceamento de carga dinâmico é mais adequado para esta tarefa.
 
-#### 4.1.5. CUDA vs. Melhor OpenMP (CPU - Dynamic Schedule)
-Esta é a comparação mais relevante, pois mede o ganho da GPU sobre a melhor versão CPU já paralelizada.
-$$ \text{Speedup} = \frac{\text{Tempo Médio (OpenMP Dynamic)}}{\text{Tempo Médio (CUDA)}} = \frac{24.38 \, \text{ms}}{8.94 \, \text{ms}} \approx 2.73 \times $$
-A versão CUDA é aproximadamente **2.73 vezes mais rápida** que a versão CPU paralelizada com OpenMP (`dynamic` schedule).
-
+#### 4.1.4. CUDA vs. Sequencial (CPU)
+Aqui, comparamos a aceleração da GPU em relação à implementação mais básica da CPU.
 
 $$
 \text{Speedup} = \frac{\text{Tempo Médio (Sequencial)}}{\text{Tempo Médio (CUDA)}} = \frac{25.85 \, \text{ms}}{8.94 \, \text{ms}} \approx 2.89 \times
@@ -86,14 +87,15 @@ $$
 
 A versão CUDA é aproximadamente **2.89 vezes mais rápida** que a versão CPU sequencial.
 
-#### 4.1.3. CUDA vs. OpenMP (CPU)
-Esta é a comparação mais relevante, pois mede o ganho da GPU sobre uma versão CPU já paralelizada.
+#### 4.1.5. CUDA vs. Melhor OpenMP (CPU - Dynamic Schedule)
+Esta é a comparação mais relevante, pois mede o ganho da GPU sobre a melhor versão CPU já paralelizada.
 
 $$
-\text{Speedup} = \frac{\text{Tempo Médio (OpenMP)}}{\text{Tempo Médio (CUDA)}} = \frac{26.35 \, \text{ms}}{8.94 \, \text{ms}} \approx 2.95 \times
+\text{Speedup} = \frac{\text{Tempo Médio (OpenMP Dynamic)}}{\text{Tempo Médio (CUDA)}} = \frac{24.38 \, \text{ms}}{8.94 \, \text{ms}} \approx 2.73 \times
 $$
 
-A versão CUDA é aproximadamente **2.95 vezes mais rápida** que a versão CPU paralelizada com OpenMP.
+A versão CUDA é aproximadamente **2.73 vezes mais rápida** que a versão CPU paralelizada com OpenMP (`dynamic` schedule).
+
 
 ## 5. Conclusão
 A migração do ray tracer para CUDA resultou em um *speedup* notável de aproximadamente **2.73x** em comparação com a melhor versão CPU otimizada com OpenMP (`dynamic` schedule). Este ganho de desempenho valida a abordagem de utilizar a GPU para tarefas computacionalmente intensivas e inerentemente paralelas como o *ray tracing*.
